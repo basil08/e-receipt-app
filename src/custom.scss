@@ -1,0 +1,18 @@
+@import '../node_modules/bootstrap/scss/functions';
+@import '../node_modules/bootstrap/scss/variables';
+@import '../node_modules/bootstrap/scss/mixins';
+
+
+@import 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap';
+
+
+$font-family-base: 'Open Sans';
+
+// $theme-colors: (
+//   'grayish': $gray-300,
+  // 'green': #57d521,
+  // 'red': #d21818,
+  // 'darkblack': #0f0f0f
+// );
+
+@import '~bootstrap/scss/bootstrap.scss';
