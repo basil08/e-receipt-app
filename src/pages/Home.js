@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Papa from "papaparse";
 
 import Header from "../components/Header";
 import TemplateMapper from "../components/TemplateMapper";
 import Layout from "../components/Layout";
+import { checkJWT, getUserProfile } from "../utils/api";
+import loginGuard from "../utils/loginguard";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
+  useEffect(loginGuard(useNavigate()), []);
+
   const emailMap = {
     0: null,
     1: "smtp",
@@ -19,6 +24,7 @@ export default function Home() {
   const [numRecordRead, setNumRecordRead] = useState(5);
   const [numSuccess, setNumSuccess] = useState(3);
   const [numFailures, setNumFailures] = useState(3);
+  const [user, setUser] = useState(null);
 
   const resetForm = () => {
     setCSVFile(null);
@@ -58,12 +64,7 @@ export default function Home() {
     setEmailProvider(emailMap[e.target.value]);
   };
 
-  // mock up user obj
-  const user = {
-    username: "Basil",
-    email: "basil@example.com",
-    id: 1,
-  };
+  
 
   return (
     <>

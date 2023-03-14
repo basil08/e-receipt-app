@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Layout from "../components/Layout";
-import { loginUser } from "../utils/api";
+import { getUserProfile, loginUser } from "../utils/api";
+import logoutGuard from "../utils/logoutguard";
 
 export default function Login() {
+  useEffect(logoutGuard(useNavigate()), []);
+  
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,7 +16,6 @@ export default function Login() {
     const res = await loginUser(email, password);
 
     if (!res.error) {
-      console.log("User logged in!");
       navigate('/');
     } else {
       window.alert(res.message);
@@ -35,13 +37,14 @@ export default function Login() {
             class="form-control"
             id="emailField"
             placeholder="admin@goonj.org"
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div class="my-3">
           <label for="passwordField" class="form-label">
             Password
           </label>
-          <input type="password" class="form-control" id="passwordField" />
+          <input type="password" class="form-control" id="passwordField" onChange={(e) => setPassword(e.target.value)} />
         </div>
 
         <div class="my-3 row justify-content-center">

@@ -1,9 +1,20 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { checkJWT } from "../utils/api";
 import { logout } from "../utils/api";
 
-export default function Header({ user }) {
+import { getUserProfile } from "../utils/api";
+
+export default function Header() {
   const navigate = useNavigate();
+  const [user, setUser] = useState();
+  
+  useEffect(() => {
+    getUserProfile().then((user) => {
+      setUser(user);
+    });
+  }, [])
+
   return (
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container-fluid">
@@ -37,26 +48,28 @@ export default function Header({ user }) {
           </ul>
 
           <div className="d-flex">
-            {checkJWT() !== null ? (
-              <div className="dropdown">
-                <button
-                  class="btn btn-secondary dropdown-toggle"
-                  href="#"
-                  id="navbarDropdown2"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  {user.username}
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="navbarDropdown2">
-                  <li>
-                    <button class="dropdown-item" onClick={() => logout()}>
-                      Logout
-                    </button>
-                  </li>
-                </ul>
-              </div>
+            {checkJWT() !== false ? (
+
+              <button class="btn btn-primary" onClick={() => logout()}>
+                Logout
+              </button>
+              // <div className="dropdown">
+              //   <button
+              //     class="btn btn-secondary dropdown-toggle"
+              //     href="#"
+              //     id="navbarDropdown2"
+              //     type="button"
+              //     data-bs-toggle="dropdown"
+              //     aria-expanded="false"
+              //   >
+              //     {user ? user.email : 'Loading...'}
+              //   </button>
+              //   <ul class="dropdown-menu" aria-labelledby="navbarDropdown2">
+              //     <li>
+
+              //     </li>
+              //   </ul>
+              // </div>
             ) : (
               <button
                 className="btn btn-primary"
