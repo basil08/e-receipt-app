@@ -56,10 +56,10 @@ async function getUserProfile() {
   } else {
     return { error: true, message: res.error };
   }
-  
+
 }
 
-async function getEmailTemplates(skip=0, limit=0) {
+async function getEmailTemplates(skip = 0, limit = 0) {
   const res = await fetch(`${BASE_URL}api/getEmailTemplates?skip=${skip}&limit=${limit}`, {
     method: 'GET',
     headers: {
@@ -68,7 +68,24 @@ async function getEmailTemplates(skip=0, limit=0) {
   });
   const data = await res.json();
   if (res.status === 200) {
-  
+
+    return { error: false, message: data };
+  } else if (res.status === 401) {
+    return { error: true, message: "User unauthorized" };
+  } else {
+    return { error: true, message: res.error };
+  }
+}
+
+async function getTemplateNames() {
+  const res = await fetch(`${BASE_URL}api/getTemplateNames`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getJWT()}`
+    }
+  });
+  const data = await res.json();
+  if (res.status === 200) {
     return { error: false, message: data };
   } else if (res.status === 401) {
     return { error: true, message: "User unauthorized" };
@@ -100,9 +117,10 @@ async function createNewEmailTemplate(name, body) {
     headers: {
       'Authorization': `Bearer ${getJWT()}`,
       'Content-Type': 'application/json'
-    }
+    },
+    body: JSON.stringify({ name, body })
   });
-  
+
   const data = await res.json();
 
   if (res.status === 200) {
@@ -113,4 +131,25 @@ async function createNewEmailTemplate(name, body) {
     return { error: true, message: res.error };
   }
 }
-export { checkJWT, logout, loginUser, getUserProfile, getEmailTemplates, deleteTemplate, createNewEmailTemplate };
+
+async function generateAndSend(csvData) {
+  const res = await fetch(`${BASE_URL}api/generateAndSendReceipts`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${getJWT()}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ csvData })
+  });
+
+  const data = await res.json();
+
+  if (res.status === 200) {
+    return { error: false, message: data };
+  } else if (res.status === 401) {
+    return { error: true, message: "User unauthorized" };
+  } else {
+    return { error: true, message: res.error };
+  }
+}
+export { checkJWT, logout, loginUser, getUserProfile, getEmailTemplates, deleteTemplate, createNewEmailTemplate, getTemplateNames, generateAndSend };

@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
+import { getTemplateNames } from "../utils/api";
 
 export default function TemplateMapper({ purposes }) {
-  // const [templates, setTemplates] = useState([]);
+  const [templates, setTemplates] = useState([]);
 
-  // mock templates array
-  const templates = [
-    'Generic Email Template',
-    'Ninja template 1',
-    'Golden Donor Template',
-    'Robin Hood donor special template'
-  ];
-
-  // useEffect(() => {
-  // }, []);
+  useEffect(() => {
+    getTemplateNames().then((e) => {
+      if (!e.error) {
+        setTemplates(e.message);
+      }
+    })
+    
+  }, []);
 
   return (
     <>
@@ -31,8 +30,9 @@ export default function TemplateMapper({ purposes }) {
                     class="form-select"
                     aria-label="Template select"
                   >
-                    {templates.map((t, index) => (
-                      <option value={index}>{t}</option>
+                    <option value="None">None</option>
+                    {templates && templates.map((t, index) => (
+                      <option value={t._id}>{t.name}</option>
                     ))}
                   </select>
                 </td>

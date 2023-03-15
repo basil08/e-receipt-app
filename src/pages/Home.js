@@ -4,7 +4,7 @@ import Papa from "papaparse";
 import Header from "../components/Header";
 import TemplateMapper from "../components/TemplateMapper";
 import Layout from "../components/Layout";
-import { checkJWT, getUserProfile } from "../utils/api";
+import { generateAndSend } from "../utils/api";
 import loginGuard from "../utils/loginguard";
 import { useNavigate } from "react-router-dom";
 
@@ -25,6 +25,8 @@ export default function Home() {
   const [numSuccess, setNumSuccess] = useState(3);
   const [numFailures, setNumFailures] = useState(3);
   const [user, setUser] = useState(null);
+  const [csvData, setCSVData] = useState([]);
+  const [error, setError] = useState('');
 
   const resetForm = () => {
     setCSVFile(null);
@@ -36,18 +38,25 @@ export default function Home() {
   };
 
   const handleGenerateAndSend = () => {
-    console.log("todo!");
+    if (csvData.length <= 0) {
+      setError("Please add some data in CSV File before sending receipts!");
+    }
+
+    generateAndSend(csvData).then((e) => {
+      if (!e.error) {
+        
+      }
+    })
   };
 
   const handleFileInputChange = (e) => {
-    // setCSVFile(e.target.files[0]);
 
     Papa.parse(e.target.files[0], {
       header: true,
       skipEmptyLines: true,
       complete: function (results) {
         console.log(results.data);
-
+        setCSVData(results.data);
         const purposes = [];
         results.data.map((d) => {
           if (d.Purpose && !purposes.includes(d.Purpose)) {
@@ -64,7 +73,7 @@ export default function Home() {
     setEmailProvider(emailMap[e.target.value]);
   };
 
-  
+
 
   return (
     <>
@@ -72,6 +81,14 @@ export default function Home() {
       <Layout>
         <div>
           <p class="fw-bold fs-4">E-receipt generation and sender app</p>
+        </div>
+
+        <div>
+          {error !== '' &&
+            <div className="alert alert-danger alert-dismissible fade show" role="alert">{error}
+              <button type="button" onClick={() => setError('')} class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          }
         </div>
         <div class="my-3">
           <label for="csvFile" class="form-label">

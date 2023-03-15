@@ -18,12 +18,9 @@ export default function EmailTemplates() {
     getEmailTemplates().then(e => {
       setTemplates(e.message.templates);
     })
-  })
+  }, []);
 
   const handleCreateNewTemplateSubmit = () => {
-    console.log("do something?");
-    console.log(newTemplateBody);
-    console.log(newTemplateName);
 
     createNewEmailTemplate(newTemplateName, newTemplateBody).then((e) => {
       if (!e.error) {
@@ -129,7 +126,7 @@ export default function EmailTemplates() {
                           </div>
                         </div>
                         <div className="row">
-                          <p>{t.body}</p>
+                          <p className="fs-5">{t.body}</p>
                         </div>
                       </div>
                     </div>
