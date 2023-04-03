@@ -4,7 +4,7 @@ import Papa from "papaparse";
 import Header from "../components/Header";
 import TemplateMapper from "../components/TemplateMapper";
 import Layout from "../components/Layout";
-import { generateAndSend } from "../utils/api";
+import { generateAndSend, getZip, downloadLogFile, downloadErrorFile } from "../utils/api";
 import loginGuard from "../utils/loginguard";
 import { useNavigate } from "react-router-dom";
 
@@ -21,12 +21,16 @@ export default function Home() {
   const [csvFile, setCSVFile] = useState(null);
   const [emailProvider, setEmailProvider] = useState(null);
   const [purposes, setPurposes] = useState([]);
-  const [numRecordRead, setNumRecordRead] = useState(5);
-  const [numSuccess, setNumSuccess] = useState(3);
-  const [numFailures, setNumFailures] = useState(3);
+  const [numRecordRead, setNumRecordRead] = useState(null);
+  const [numSuccess, setNumSuccess] = useState(null);
+  const [numFailures, setNumFailures] = useState(null);
   const [user, setUser] = useState(null);
   const [csvData, setCSVData] = useState([]);
   const [error, setError] = useState('');
+  const [templateMapping, setTemplateMapping] = useState([]);
+  const [defaultTemplate, setDefaultTemplate] = useState('');
+  const [info, setInfo] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const resetForm = () => {
     setCSVFile(null);
@@ -35,19 +39,91 @@ export default function Home() {
     setNumRecordRead(null);
     setNumSuccess(null);
     setNumFailures(null);
+    setError('');
   };
 
+  const downloadZip = async () => {
+    const res = await getZip();
+    const raw = await res.arrayBuffer();
+    const bytes = new Uint8Array(raw);
+    let blob = new Blob([bytes], { type: "application/zip" });// change resultByte to bytes
+    var link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = "FILE.zip";
+    link.click()
+  }
+
+  const downloadLog = async () => {
+    const res = await downloadLogFile();
+    const raw = await res.text();
+    console.log(raw);
+    // const bytes = new Uint8Array(raw);
+    // let blob=new Blob(raw, {type: "text/plain"});// change resultByte to bytes
+    var link = document.createElement('a');
+    document.body.appendChild(link);
+    link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(raw));
+    link.setAttribute('download', 'log.txt');
+    // link.download="log.txt";
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const downloadError = async () => {
+    const res = await downloadErrorFile();
+    const raw = await res.text();
+    console.log(raw);
+    var link = document.createElement('a');
+    document.body.appendChild(link);
+
+    link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(raw));
+    link.setAttribute('download', 'error.txt');
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const handleDefaultTemplateChange = (e) => {
+    setDefaultTemplate(e);
+  }
+
+  // TODO: 
+  const handleTemplateMappingChange = (p, e) => {
+    // edit the array of templateMapping
+    const newMapping = templateMapping.slice();
+    const val = newMapping.find((m) => m.purpose === p)
+    if (val) {
+      newMapping.splice(val, 1);
+    }
+    newMapping.push({ purpose: p, templateId: e });
+    setTemplateMapping(newMapping);
+  }
+
   const handleGenerateAndSend = () => {
+    setIsSending(true);
     if (csvData.length <= 0) {
       setError("Please add some data in CSV File before sending receipts!");
     }
 
-    generateAndSend(csvData).then((e) => {
-      if (!e.error) {
-        
+    if (templateMapping.length <= 0 && defaultTemplate == '') {
+      setError("Please specify atleast one generic email template!");
+    }
+
+    generateAndSend(csvData, templateMapping).then((e) => {
+      if (e.error) {
+        console.log(e);
+        setError("An error occurred while emailing receipts. Check logs");
+      } else {
+        setInfo("All email receipts sent!");
       }
+
+      setIsSending(false);
     })
   };
+
+
+  const computeTemplateMapping = () => {
+    console.log("computing!!");
+    console.log(templateMapping);
+  }
 
   const handleFileInputChange = (e) => {
 
@@ -59,8 +135,8 @@ export default function Home() {
         setCSVData(results.data);
         const purposes = [];
         results.data.map((d) => {
-          if (d.Purpose && !purposes.includes(d.Purpose)) {
-            purposes.push(d.Purpose);
+          if (d.PURPOSE && !purposes.includes(d.PURPOSE)) {
+            purposes.push(d.PURPOSE);
           }
         });
         setPurposes(purposes);
@@ -72,7 +148,6 @@ export default function Home() {
   const handleEmailProviderChange = (e) => {
     setEmailProvider(emailMap[e.target.value]);
   };
-
 
 
   return (
@@ -115,16 +190,19 @@ export default function Home() {
               Select email provider (Default: Google SMTP)
             </option>
             <option value="1">Google SMTP</option>
-            <option value="2">MailChimp</option>
-            <option value="3">SendGrid</option>
+            <option value="2">MailChimp (Not configured)
+            </option>
+            <option value="3">SendGrid (Not configured)</option>
           </select>
         </div>
 
+
+
         <div class="my-3">
-          {csvFile && <TemplateMapper purposes={purposes} />}
+          {csvFile && <TemplateMapper purposes={purposes} computeTemplateMapping={computeTemplateMapping} handleDefaultTemplateChange={handleDefaultTemplateChange} handleTemplateMappingChange={handleTemplateMappingChange} />}
         </div>
 
-        <div>status bar placeholder</div>
+        {/* <div>status bar placeholder</div> */}
 
         <div>
           <div>Status Box</div>
@@ -149,6 +227,16 @@ export default function Home() {
           </div>
         </div>
 
+
+        <div className="py-3">
+          {isSending && <div className="spinner-border p-2" role="status"><span class="visually-hidden">Loading...</span></div>}
+          {info !== '' &&
+            <div className="alert alert-info alert-dismissible fade show" role="alert">{info}
+              <button type="button" onClick={() => setInfo('')} class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          }
+        </div>
+
         <div class="my-3 text-center">
           <button
             class="w-100 btn btn-primary"
@@ -160,15 +248,15 @@ export default function Home() {
 
         <div class="row justify-contet-between">
           <div class="col">
-            <button class="btn btn-outline-secondary">Download receipts</button>
+            <button class="btn btn-outline-secondary" onClick={() => downloadZip()}>Download receipts</button>
           </div>
           <div class="col">
-            <button class="btn btn-outline-secondary">
+            <button class="btn btn-outline-secondary" onClick={() => downloadError()}>
               Download error file
             </button>
           </div>
           <div class="col">
-            <button class="btn btn-outline-secondary">Download log file</button>
+            <button class="btn btn-outline-secondary" onClick={() => downloadLog()}>Download log file</button>
           </div>
         </div>
 

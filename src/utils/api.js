@@ -132,19 +132,19 @@ async function createNewEmailTemplate(name, body) {
   }
 }
 
-async function generateAndSend(csvData) {
-  const res = await fetch(`${BASE_URL}api/generateAndSendReceipts`, {
+async function generateAndSend(csvData, templateMapping) {
+  const res = await fetch(`${BASE_URL}api/generateAndSendReceipts `, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${getJWT()}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ csvData })
+    body: JSON.stringify({ csvData, templateMapping })
   });
 
   const data = await res.json();
-
-  if (res.status === 200) {
+  
+  if (res.status === 201) {
     return { error: false, message: data };
   } else if (res.status === 401) {
     return { error: true, message: "User unauthorized" };
@@ -152,4 +152,35 @@ async function generateAndSend(csvData) {
     return { error: true, message: res.error };
   }
 }
-export { checkJWT, logout, loginUser, getUserProfile, getEmailTemplates, deleteTemplate, createNewEmailTemplate, getTemplateNames, generateAndSend };
+
+async function getZip() {
+  const res = await fetch(`${BASE_URL}api/getZip `, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getJWT()}`,
+    },
+  });
+  return res;
+}
+
+async function downloadLogFile() {
+  const res = await fetch(`${BASE_URL}api/getLog `, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getJWT()}`,
+    },
+  });
+  return res;
+}
+
+async function downloadErrorFile() {
+  const res = await fetch(`${BASE_URL}api/getError `, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getJWT()}`,
+    },
+  });
+  return res;
+}
+
+export { checkJWT, logout, loginUser, getUserProfile, downloadLogFile, downloadErrorFile, getEmailTemplates, getZip, deleteTemplate, createNewEmailTemplate, getTemplateNames, generateAndSend };
