@@ -17,15 +17,16 @@ export default function TemplateMapper({ purposes, computeTemplateMapping, handl
     <>
       <div class="p-3">
         <div class="my-3">
-          <label for="genericTemplate">Generic Template</label>
+          <label htmlFor="genericTemplate">Generic Template</label>
           <select
             class="form-select"
             id="genericTemplate"
             aria-label="Template select"
             onChange={(e) => handleDefaultTemplateChange(e.target.value)}
           >
+            <option value={"None"}>None</option>
             {templates && templates.map((t, index) => (
-              <option value={t._id}>{t.name}</option>
+              <option key={index} value={t._id}>{t.name}</option>
             ))}
           </select>
         </div>
@@ -53,7 +54,7 @@ export default function TemplateMapper({ purposes, computeTemplateMapping, handl
                   >
                     <option value="None">None</option>
                     {templates && templates.map((t, index) => (
-                      <option value={t._id}>{t.name}</option>
+                      <option key={index} value={t._id}>{t.name}</option>
                     ))}
                   </select>
                 </td>

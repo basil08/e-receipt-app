@@ -4,7 +4,7 @@ import Papa from "papaparse";
 import Header from "../components/Header";
 import TemplateMapper from "../components/TemplateMapper";
 import Layout from "../components/Layout";
-import { generateAndSend, getZip, downloadLogFile, downloadErrorFile } from "../utils/api";
+import { generateReceipts, sendReceipts, getZip, downloadLogFile, downloadErrorFile } from "../utils/api";
 import loginGuard from "../utils/loginguard";
 import { useNavigate } from "react-router-dom";
 
@@ -31,6 +31,11 @@ export default function Home() {
   const [defaultTemplate, setDefaultTemplate] = useState('');
   const [info, setInfo] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [csvValidated, setCSVVaildated] = useState(false);
+  const [receiptsGenerated, setReceiptsGenerated] = useState(false);
+  const [emailsSent, setEmailsSent] = useState(false);
+
+  const [csvErrors, setCSVErrors] = useState([]);
 
   const resetForm = () => {
     setCSVFile(null);
@@ -40,6 +45,10 @@ export default function Home() {
     setNumSuccess(null);
     setNumFailures(null);
     setError('');
+    setCSVErrors([]);
+    setCSVVaildated(false);
+    setReceiptsGenerated(false);
+    setEmailsSent(false);
   };
 
   const downloadZip = async () => {
@@ -97,27 +106,56 @@ export default function Home() {
     setTemplateMapping(newMapping);
   }
 
-  const handleGenerateAndSend = () => {
-    setIsSending(true);
+  const handleGenerate = () => {
     if (csvData.length <= 0) {
       setError("Please add some data in CSV File before sending receipts!");
+      return;
     }
 
-    if (templateMapping.length <= 0 && defaultTemplate == '') {
-      setError("Please specify atleast one generic email template!");
+    if (csvErrors.length > 0) {
+      setError("Please correct all errors in CSV before sending receipts!");
+      return;
     }
 
-    generateAndSend(csvData, templateMapping).then((e) => {
+    setIsSending(true);
+
+    generateReceipts(csvData).then((e) => {
       if (e.error) {
         console.log(e);
-        setError("An error occurred while emailing receipts. Check logs");
+        setError("An error occurred while generating receipts. Check logs");
       } else {
-        setInfo("All email receipts sent!");
+        setInfo("Receipts generated. Proceed to sending emails now!");
+        setReceiptsGenerated(true);
       }
-
       setIsSending(false);
     })
   };
+
+  const handleSend = () => {
+    if (templateMapping.length <= 0 && defaultTemplate === "None") {
+      setError("Please specify atleast one generic email template!");
+      return;
+    }
+    
+    if (csvErrors.length > 0) {
+      setError("Please correct all errors in CSV before sending receipts!");
+      return;
+    }
+
+    setInfo("");
+    setIsSending(true);
+    sendReceipts(csvData, defaultTemplate).then((e) => {
+      if (e.error) {
+        console.log(e);
+        setError("An error occurred while generating receipts. Check logs");
+      } else {
+        setInfo("All email receipts sent!");
+        setEmailsSent(true);
+      }
+      setIsSending(false);
+    })
+  }
+
 
 
   const computeTemplateMapping = () => {
@@ -149,6 +187,59 @@ export default function Home() {
     setEmailProvider(emailMap[e.target.value]);
   };
 
+  const getErrors = (csvData) => {
+    // console.log(csvData);
+    const errors = [];
+
+    csvData.map((record, index) => {
+      if (record['EMAIL'] && !isValidEmail(record['EMAIL'])) {
+        errors.push({ line: index + 1, errText: "Email not valid" })
+      }
+
+      // TODO: should it be exact 10?
+      if (record['PHONE'] && !isValidPhoneNumber(record['PHONE'])) {
+        errors.push({ line: index + 1, errText: 'Mobile number is less than 10 digits' })
+      }
+
+      if (record['ID_TYPE'] && record['ID_TYPE'] === 'PAN') {
+        if (record['ID'] && !isValidPan(record['ID'])) {
+          errors.push({ line: index + 1, errText: 'Pan number doesn\'t match pattern: alphabets<5> number <4> alphabet<1>' });
+        }
+      }
+    });
+
+    return errors;
+  }
+
+  const isValidPhoneNumber = (phone) => {
+    return String(phone).length == 10;
+  }
+
+  const isValidEmail = (email) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
+
+  const isValidPan = (pan) => {
+    return String(pan)
+      .match(
+        /^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$/
+      );
+  };
+
+  const handleValidateCSV = () => {
+    const errors = getErrors(csvData);
+    setCSVErrors(errors);
+
+    if (errors.length <= 0) {
+      setCSVVaildated(true);
+    } else {
+      setCSVVaildated(false);
+    }
+  }
 
   return (
     <>
@@ -204,7 +295,7 @@ export default function Home() {
 
         {/* <div>status bar placeholder</div> */}
 
-        <div>
+        {/* <div>
           <div>Status Box</div>
           <div class="border border-1 border-darkblack rounded p-2 bg-white">
             {numRecordRead && <p>Total records read: {numRecordRead}</p>}
@@ -225,7 +316,7 @@ export default function Home() {
               </div>
             </p>
           </div>
-        </div>
+        </div> */}
 
 
         <div className="py-3">
@@ -239,24 +330,57 @@ export default function Home() {
 
         <div class="my-3 text-center">
           <button
-            class="w-100 btn btn-primary"
-            onClick={() => handleGenerateAndSend()}
+            class={`w-100 btn btn-primary ${!csvFile ? 'disabled' : ''}`}
+            onClick={() => handleValidateCSV()}
           >
-            Generate and Send
+            Validate CSV
           </button>
         </div>
 
-        <div class="row justify-contet-between">
+        <div className="my-3 text-center">
+          {(csvErrors && csvErrors.length > 0) &&
+            <div className="card border">
+              <div className="text-red fw-bold">Errors</div>
+              <ol>
+                {csvErrors.map((error, index) => {
+                  return <li key={index} className="text-red"><strong>
+                    Row number {error.line}
+                  </strong>: {error.errText}</li>
+                })}
+              </ol>
+            </div>
+          }
+        </div>
+
+        <div class="my-3 text-center">
+          <button
+            class={`w-100 btn btn-primary ${!csvValidated ? 'disabled' : ''}`}
+            onClick={() => handleGenerate()}
+          >
+            Generate Receipts
+          </button>
+        </div>
+
+        <div class="my-3 text-center">
+          <button
+            class={`w-100 btn btn-primary ${(!csvValidated || !receiptsGenerated) ? 'disabled' : ''}`}
+            onClick={() => handleSend()}
+          >
+            Send Receipts
+          </button>
+        </div>
+
+        <div class="row justify-content-between">
           <div class="col">
-            <button class="btn btn-outline-secondary" onClick={() => downloadZip()}>Download receipts</button>
+            <button className={`btn btn-outline-secondary ${(!csvValidated | !receiptsGenerated || !emailsSent) ? 'disabled' : ''}`} onClick={() => downloadZip()}>Download receipts</button>
           </div>
           <div class="col">
-            <button class="btn btn-outline-secondary" onClick={() => downloadError()}>
+            <button className={`btn btn-outline-secondary ${!csvValidated | !receiptsGenerated || !emailsSent ? 'disabled' : ''}`} onClick={() => downloadError()}>
               Download error file
             </button>
           </div>
           <div class="col">
-            <button class="btn btn-outline-secondary" onClick={() => downloadLog()}>Download log file</button>
+            <button className={`btn btn-outline-secondary ${!csvValidated | !receiptsGenerated || !emailsSent ? 'disabled' : ''}`} onClick={() => downloadLog()}>Download log file</button>
           </div>
         </div>
 

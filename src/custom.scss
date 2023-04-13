@@ -15,4 +15,9 @@ $font-family-base: 'Open Sans';
   // 'darkblack': #0f0f0f
 // );
 
+$theme-colors: map-merge($map1: $theme-colors, $map2: (
+    "red": $red
+));
+
+
 @import '~bootstrap/scss/bootstrap.scss';

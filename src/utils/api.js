@@ -21,7 +21,6 @@ async function loginUser(email, password) {
     body: JSON.stringify({ email, password })
   });
 
-  console.log(res.status);
   if (res.status === 201) {
     const data = await res.json();
     setJWT(data['access_token']);
@@ -132,14 +131,37 @@ async function createNewEmailTemplate(name, body) {
   }
 }
 
-async function generateAndSend(csvData, templateMapping) {
-  const res = await fetch(`${BASE_URL}api/generateAndSendReceipts `, {
+async function generateReceipts(csvData) {
+  
+  const res = await fetch(`${BASE_URL}api/generateReceipts `, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${getJWT()}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ csvData, templateMapping })
+    body: JSON.stringify({ csvData })
+  });
+
+  const data = await res.json();
+  
+  if (res.status === 201) {
+    return { error: false, message: data };
+  } else if (res.status === 401) {
+    return { error: true, message: "User unauthorized" };
+  } else {
+    return { error: true, message: res.error };
+  }
+}
+
+async function sendReceipts(csvData, defaultTemplate) {
+  
+  const res = await fetch(`${BASE_URL}api/sendReceipts `, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${getJWT()}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ csvData, defaultTemplate })
   });
 
   const data = await res.json();
@@ -183,4 +205,4 @@ async function downloadErrorFile() {
   return res;
 }
 
-export { checkJWT, logout, loginUser, getUserProfile, downloadLogFile, downloadErrorFile, getEmailTemplates, getZip, deleteTemplate, createNewEmailTemplate, getTemplateNames, generateAndSend };
+export { checkJWT, logout, loginUser, getUserProfile, downloadLogFile, downloadErrorFile, getEmailTemplates, getZip, deleteTemplate, createNewEmailTemplate, getTemplateNames, generateReceipts, sendReceipts };

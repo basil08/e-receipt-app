@@ -45,6 +45,11 @@ export default function Header() {
                 Templates
               </a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page"  target="_blank" href="https://docs.google.com/document/d/1XIwYdY738Wrn4jePIfiRu-2GxrXyBMNtJ6mrLyLArRw/edit?hl=en">
+                Manual
+              </a>
+            </li>
           </ul>
 
           <div className="d-flex">

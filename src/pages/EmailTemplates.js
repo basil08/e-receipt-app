@@ -13,12 +13,14 @@ export default function EmailTemplates() {
   const [newTemplateBody, setNewTemplateBody] = useState(null);
   const [newTemplateName, setNewTemplateName] = useState(null);
   const [templates, setTemplates] = useState([]);
+  const [templateCount, setTemplateCount] = useState(0);
 
   useEffect(() => {
     getEmailTemplates().then(e => {
       setTemplates(e.message.templates);
+      setTemplateCount(e.message.templates.length);
     })
-  }, []);
+  }, [templateCount]);
 
   const handleCreateNewTemplateSubmit = () => {
 
@@ -35,6 +37,8 @@ export default function EmailTemplates() {
     deleteTemplate(id).then(e => {
       if (!e.error) {
         console.log(e.message);
+        window.alert("Email template deleted!");
+        setTemplateCount(templateCount - 1);
       }
     })
 
