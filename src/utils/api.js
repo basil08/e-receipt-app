@@ -1,5 +1,5 @@
 
-const DEBUG = true;
+const DEBUG = false;
 
 const GOONJ_APP_JWT_KEY = 'GOONJ_APP_JWT';
 const BASE_URL = DEBUG ? 'http://localhost:8080/' : 'https://goonj-receipts-backend.vercel.app/';
