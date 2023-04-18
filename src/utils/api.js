@@ -1,7 +1,8 @@
-import { Navigate } from "react-router-dom";
+
+const DEBUG = false;
 
 const GOONJ_APP_JWT_KEY = 'GOONJ_APP_JWT';
-const BASE_URL = 'http://localhost:8080/';
+const BASE_URL = DEBUG ? 'http://localhost:8080/' : 'https://goonj-receipts-backend.vercel.app/';
 
 const setJWT = (jwt) => window.localStorage.setItem(GOONJ_APP_JWT_KEY, jwt);
 const getJWT = () => window.localStorage.getItem(GOONJ_APP_JWT_KEY);
