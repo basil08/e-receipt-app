@@ -167,11 +167,32 @@ async function sendReceipts(csvData, defaultTemplate) {
   const data = await res.json();
   
   if (res.status === 201) {
-    return { error: false, message: data };
+    return { error: false, code: 0, message: data };
   } else if (res.status === 401) {
-    return { error: true, message: "User unauthorized" };
-  } else {
-    return { error: true, message: res.error };
+    return { error: true, code: 1, message: "User unauthorized" };
+  } else if (res.status === 400 ) {
+    return { error: true, code: -1, message: data.message };
+    // return { error: true, message: res.error };
+  }
+}
+
+async function clearCache() {
+  
+  const res = await fetch(`${BASE_URL}api/clearCache `, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getJWT()}`,
+    },
+  });
+
+  const data = await res.json();
+  
+  if (res.status === 200) {
+    return { error: false, code: 0, message: data.filesCleared };
+  } else if (res.status === 401) {
+    return { error: true, code: 1, message: "User unauthorized" };
+  } else if (res.status === 400 ) {
+    return { error: true, code: -1, message: data.message };
   }
 }
 
@@ -205,4 +226,4 @@ async function downloadErrorFile() {
   return res;
 }
 
-export { checkJWT, logout, loginUser, getUserProfile, downloadLogFile, downloadErrorFile, getEmailTemplates, getZip, deleteTemplate, createNewEmailTemplate, getTemplateNames, generateReceipts, sendReceipts };
+export { checkJWT, logout, loginUser, getUserProfile, downloadLogFile, downloadErrorFile, getEmailTemplates, getZip, deleteTemplate, createNewEmailTemplate, getTemplateNames, generateReceipts, sendReceipts, clearCache };

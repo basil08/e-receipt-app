@@ -8,13 +8,14 @@ A list of achieved objectives:
 
 A list of unachieved objectives:
 
+0. Update User manual with "Clear Cache" function
 1. Make e-receipts default
 2. Convert amount to words in "and X paise" etc.
 5. Download receipts should have the format 2 per A4 page
 3. Progress bar for sending email
 4. Show number of receipts generated
 8. Email template choosing
-9. Work on the asynchrous PDF generation
+9. ~~Work on the asynchrous PDF generation~~
 7. Deploy on live server
 6. Developer's guide at the end of development.
 

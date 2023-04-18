@@ -4,7 +4,7 @@ import Papa from "papaparse";
 import Header from "../components/Header";
 import TemplateMapper from "../components/TemplateMapper";
 import Layout from "../components/Layout";
-import { generateReceipts, sendReceipts, getZip, downloadLogFile, downloadErrorFile } from "../utils/api";
+import { generateReceipts, sendReceipts, getZip, downloadLogFile, clearCache, downloadErrorFile } from "../utils/api";
 import loginGuard from "../utils/loginguard";
 import { useNavigate } from "react-router-dom";
 
@@ -28,7 +28,7 @@ export default function Home() {
   const [csvData, setCSVData] = useState([]);
   const [error, setError] = useState('');
   const [templateMapping, setTemplateMapping] = useState([]);
-  const [defaultTemplate, setDefaultTemplate] = useState('');
+  const [defaultTemplate, setDefaultTemplate] = useState('6430fc87853aebef96055aad');
   const [info, setInfo] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [csvValidated, setCSVVaildated] = useState(false);
@@ -132,22 +132,27 @@ export default function Home() {
   };
 
   const handleSend = () => {
-    if (templateMapping.length <= 0 && defaultTemplate === "None") {
+    if (templateMapping.length <= 0 && (defaultTemplate === "None" || defaultTemplate === "")) {
       setError("Please specify atleast one generic email template!");
       return;
     }
-    
+
     if (csvErrors.length > 0) {
       setError("Please correct all errors in CSV before sending receipts!");
       return;
     }
 
     setInfo("");
+    setError("");
     setIsSending(true);
     sendReceipts(csvData, defaultTemplate).then((e) => {
       if (e.error) {
         console.log(e);
-        setError("An error occurred while generating receipts. Check logs");
+        if (e.code === -1) {
+          setError(e.message);
+        } else {
+          setError("An error occurred while generating receipts. Check logs");
+        }
       } else {
         setInfo("All email receipts sent!");
         setEmailsSent(true);
@@ -230,6 +235,15 @@ export default function Home() {
       );
   };
 
+  const handleClearCache = () => {
+    clearCache().then((e) => {
+      if (e.error) {
+        setError(e.message);
+      }
+      setInfo(`Files cleared: ${e.message}`);
+    })
+  }
+
   const handleValidateCSV = () => {
     const errors = getErrors(csvData);
     setCSVErrors(errors);
@@ -249,13 +263,7 @@ export default function Home() {
           <p class="fw-bold fs-4">E-receipt generation and sender app</p>
         </div>
 
-        <div>
-          {error !== '' &&
-            <div className="alert alert-danger alert-dismissible fade show" role="alert">{error}
-              <button type="button" onClick={() => setError('')} class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          }
-        </div>
+
         <div class="my-3">
           <label for="csvFile" class="form-label">
             Input file receipt CSV
@@ -326,6 +334,22 @@ export default function Home() {
               <button type="button" onClick={() => setInfo('')} class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
           }
+          <div>
+            {error !== '' &&
+              <div className="alert alert-danger alert-dismissible fade show" role="alert">{error}
+                <button type="button" onClick={() => setError('')} class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="my-3 text-center">
+          <button
+            class={`w-100 btn btn-primary`}
+            onClick={() => handleClearCache()}
+          >
+            Clear Cache
+          </button>
         </div>
 
         <div class="my-3 text-center">

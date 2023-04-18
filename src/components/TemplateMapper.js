@@ -24,7 +24,6 @@ export default function TemplateMapper({ purposes, computeTemplateMapping, handl
             aria-label="Template select"
             onChange={(e) => handleDefaultTemplateChange(e.target.value)}
           >
-            <option value={"None"}>None</option>
             {templates && templates.map((t, index) => (
               <option key={index} value={t._id}>{t.name}</option>
             ))}
